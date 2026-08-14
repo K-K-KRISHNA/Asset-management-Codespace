@@ -652,3 +652,57 @@ Future configuration will be added as the corresponding features are implemented
 - [Application Architecture](../project/architecture.md)
 - [Development Workflow](../project/development-workflow.md)
 - [Project README](../../README.md)
+
+# Environment Configuration
+
+## Overview
+
+The application uses environment variables for runtime configuration.
+
+Environment-specific configuration must not be hardcoded into the application source code.
+
+NestJS `ConfigModule` is used as the centralized configuration mechanism, and Joi is used to validate environment variables during application startup.
+
+If an invalid or missing required environment variable is detected, the application will fail during startup.
+
+This fail-fast behavior prevents the application from running with an invalid configuration.
+
+---
+
+## Configuration Flow
+
+    .env
+      |
+      v
+    ConfigModule
+      |
+      v
+    Joi Validation
+      |
+      +---- Invalid ---> Application Startup Fails
+      |
+      +---- Valid -----> Application Starts
+                            |
+                            v
+                       ConfigService
+
+---
+
+## Current Environment Variables
+
+| Variable | Required | Allowed / Format | Example |
+|---|---|---|---|
+| `NODE_ENV` | Yes | `development`, `test`, `production` | `development` |
+| `PORT` | Yes | Valid TCP port | `3000` |
+| `API_PREFIX` | Yes | Non-empty string | `api` |
+| `API_VERSION` | Yes | Non-empty string | `v1` |
+
+---
+
+## Example `.env`
+
+```env
+NODE_ENV=development
+PORT=3000
+API_PREFIX=api
+API_VERSION=v1
