@@ -1,1245 +1,889 @@
 # Application Architecture
 
-## 1. Overview
+## Overview
 
-The Asset Management application is a production-oriented backend application built using NestJS and TypeScript.
+This project follows a production-oriented, feature-based architecture using NestJS.
 
-The application exposes versioned REST APIs that can be consumed by web applications, mobile applications, administrative applications, and other authorized clients.
+The architecture is designed to keep business features isolated, reusable infrastructure centralized, and application configuration separated from business logic.
 
-The system is designed to be:
-
-- Modular
-- Maintainable
-- Secure
-- Testable
-- Scalable
-- Production-ready
-
-The architecture will support capabilities such as:
-
-- Authentication and authorization
-- User management
-- Asset management
-- Asset types and categories
-- Asset allocation
-- Asset requests
-- Asset lifecycle management
-- File uploads
-- Email communication
-- Notifications
-- Reporting
-- API documentation
-- Automated testing
-- Auditability
-
-Business functionality will be introduced incrementally while maintaining the architectural standards defined in this document.
+The application will also follow a consistent API structure so that all endpoints can be accessed through Postman and other API clients.
 
 ---
 
-## 2. Architectural Goals
+## Project Structure
 
-The primary architectural goals are:
+The project follows a feature-based modular architecture.
 
-- Maintainability
-- Scalability
-- Security
-- Testability
-- Reusability
-- Separation of concerns
-- Clear module boundaries
-- Consistent API behavior
-- Centralized configuration
-- Reliable error handling
-- Observability
-- Production readiness
-
-The architecture should allow new functionality to be added without unnecessarily modifying unrelated modules.
-
----
-
-## 3. Technology Stack
-
-### Backend
-
-- NestJS
-- TypeScript
-- Node.js
-
-### Package Management
-
-- Bun
-
-Bun is used as the project's package manager and script runner.
-
-The application remains compatible with the Node.js ecosystem and NestJS runtime requirements.
-
-### Database
-
-- MongoDB
-- Mongoose
-
-MongoDB will be used as the primary application database.
-
-Mongoose will be used for:
-
-- Schema definitions
-- Models
-- Database operations
-- Validation where appropriate
-- Index definitions
-- References where required
-
-### API
-
-- REST API
-- Swagger / OpenAPI
-- Postman
-
-### Development
-
-- Git
-- GitHub
-- GitHub Codespaces
-- VS Code
-
-### Testing
-
-The project will support:
-
-- Unit testing
-- Integration testing
-- End-to-end testing
-- API testing through Postman
+```text
+src/
+├── common/
+│   ├── decorators/
+│   ├── filters/
+│   ├── guards/
+│   ├── interceptors/
+│   ├── middleware/
+│   └── pipes/
+│
+├── config/
+│   └── env.validation.ts
+│
+├── modules/
+│   ├── health/
+│   │   ├── health.controller.ts
+│   │   ├── health.module.ts
+│   │   └── health.service.ts
+│   │
+│   ├── auth/
+│   ├── users/
+│   ├── assets/
+│   ├── files/
+│   └── email/
+│
+├── app.module.ts
+└── main.ts
+```
 
 ---
 
-## 4. High-Level Architecture
+## Architectural Responsibilities
 
-The application follows a modular backend architecture.
+### `common/`
 
-    +-----------------------------+
-    |       Client Applications   |
-    |                             |
-    | Web / Mobile / Admin / etc. |
-    +--------------+--------------+
-                   |
-                   | HTTP / HTTPS
-                   v
-    +--------------------------------+
-    |          NestJS API            |
-    |                                |
-    | Controllers / Guards / Pipes   |
-    +----------------+---------------+
-                     |
-                     v
-    +--------------------------------+
-    |       Application Modules      |
-    |                                |
-    | Auth / Users / Assets / etc.   |
-    +----------------+---------------+
-                     |
-           +---------+---------+
-           |                   |
-           v                   v
-    +-------------+     +----------------+
-    |  Database   |     | Infrastructure |
-    |             |     |                |
-    |  MongoDB    |     | Email / Files  |
-    |  Mongoose   |     | External APIs  |
-    +-------------+     +----------------+
+Contains reusable application-level infrastructure that can be shared across multiple modules.
 
-The exact infrastructure providers will be selected as the corresponding features are implemented.
+Examples:
+
+- Guards
+- Interceptors
+- Pipes
+- Exception filters
+- Decorators
+- Middleware
+
+Business-specific logic should not be placed inside this directory.
 
 ---
 
-## 5. Application Request Flow
+### `config/`
 
-A typical API request should follow a controlled flow.
-
-    Client
-      |
-      v
-    HTTP Request
-      |
-      v
-    Controller
-      |
-      v
-    Guards
-      |
-      v
-    Pipes / Validation
-      |
-      v
-    Service
-      |
-      v
-    Data Access
-      |
-      v
-    MongoDB
-      |
-      v
-    Service
-      |
-      v
-    Response
-      |
-      v
-    Client
-
-Depending on the endpoint, additional components such as interceptors, authorization policies, external services, or file-processing services may participate in the request.
-
----
-
-## 6. Application Layers
-
-The application will maintain clear separation of responsibilities.
-
-### 6.1 Controller Layer
-
-Controllers are responsible for handling HTTP requests.
-
-Responsibilities include:
-
-- Route definitions
-- Request parameters
-- Request body handling
-- Request validation integration
-- Calling application services
-- Returning responses
-
-Controllers should remain thin.
-
-Business logic should not be implemented directly inside controllers.
-
-Expected flow:
-
-    HTTP Request
-         |
-         v
-    Controller
-         |
-         v
-    Service
-
----
-
-### 6.2 Service Layer
-
-Services contain application and business logic.
-
-Responsibilities include:
-
-- Business rules
-- Business validations
-- Coordinating multiple operations
-- Calling data-access services
-- Calling infrastructure services
-- Processing application workflows
-
-Services should not be tightly coupled to HTTP-specific concerns where possible.
-
----
-
-### 6.3 Data Access Layer
-
-The data access layer is responsible for communication with the database.
-
-Responsibilities include:
-
-- Database queries
-- Database writes
-- Aggregations
-- Persistence
-- Query optimization
-- Index-aware operations
-
-MongoDB and Mongoose will be used for persistence.
-
-Database access should be kept separate from controllers.
-
----
-
-### 6.4 Infrastructure Layer
-
-Infrastructure components handle external dependencies.
-
-Examples include:
-
-- Email providers
-- File storage providers
-- External APIs
-- Cloud services
-- Third-party integrations
-
-Business modules should interact with application services or abstractions rather than being tightly coupled to specific external providers.
+Contains application configuration and environment validation.
 
 Example:
 
-    User Module
-         |
-         v
-    Email Service
-         |
-         v
-    Email Provider
+```text
+config/
+└── env.validation.ts
+```
 
-This allows infrastructure providers to be changed with minimal impact on business logic.
+Environment variables are validated during application startup using Joi.
 
----
-
-## 7. Planned Project Structure
-
-The project will use a modular structure.
-
-    src/
-    │
-    ├── common/
-    │   ├── decorators/
-    │   ├── filters/
-    │   ├── guards/
-    │   ├── interceptors/
-    │   ├── pipes/
-    │   └── utils/
-    │
-    ├── config/
-    │
-    ├── database/
-    │
-    ├── infrastructure/
-    │   ├── email/
-    │   ├── storage/
-    │   └── external-services/
-    │
-    ├── modules/
-    │   ├── auth/
-    │   ├── users/
-    │   ├── assets/
-    │   ├── asset-types/
-    │   ├── allocations/
-    │   ├── requests/
-    │   ├── files/
-    │   ├── notifications/
-    │   └── ...
-    │
-    ├── app.module.ts
-    └── main.ts
-
-The exact modules will be created according to the finalized business requirements.
+Configuration is accessed through NestJS `ConfigService`.
 
 ---
 
-## 8. Common Module
+### `modules/`
 
-The `common` directory contains reusable application-wide functionality.
+Contains the application's business and feature modules.
 
-Expected components include:
-
-    common/
-    ├── decorators/
-    ├── filters/
-    ├── guards/
-    ├── interceptors/
-    ├── pipes/
-    └── utils/
-
-### Decorators
-
-Reusable custom decorators.
-
-Examples may include:
-
-- Current user
-- Public route
-- Required roles
-- API metadata
-
-### Filters
-
-Global or reusable exception filters.
-
-### Guards
-
-Security and authorization guards.
+Each significant feature should have its own module.
 
 Examples:
 
-- Authentication guard
-- Role guard
-- Permission guard
+```text
+modules/
+├── auth/
+├── users/
+├── assets/
+├── files/
+└── email/
+```
 
-### Interceptors
+Feature-specific controllers, services, DTOs, and other implementation details should remain inside their respective modules.
 
-Cross-cutting request and response behavior.
-
-Examples:
-
-- Response transformation
-- Request logging
-- Execution timing
-
-### Pipes
-
-Input transformation and validation.
-
-### Utils
-
-Small reusable utility functions that do not belong to a specific business module.
+This keeps features isolated and makes the application easier to maintain and scale.
 
 ---
 
-## 9. Configuration Module
+## Module Structure
 
-Configuration is centralized under the configuration layer.
+A typical business module should follow a structure similar to:
 
-The application uses:
+```text
+users/
+├── controllers/
+├── services/
+├── dto/
+├── entities/
+└── users.module.ts
+```
 
-    @nestjs/config
+The exact internal structure can be expanded as the feature becomes more complex.
+
+The module should own its business logic and should not unnecessarily depend on unrelated modules.
+
+---
+
+# API Architecture
+
+## Global API Prefix
+
+All application APIs use the global prefix:
+
+```text
+/api
+```
+
+This is configured during application bootstrap using:
+
+```ts
+app.setGlobalPrefix(apiPrefix);
+```
+
+The value of `apiPrefix` comes from the application configuration.
+
+---
+
+## API Versioning
+
+The application uses URI-based API versioning.
+
+Configuration:
+
+```ts
+app.enableVersioning({
+  type: VersioningType.URI,
+  prefix: 'v',
+});
+```
+
+The current API version is:
+
+```text
+v1
+```
+
+Therefore, the standard API URL structure is:
+
+```text
+/api/v1/<resource>
+```
+
+For example:
+
+```text
+GET /api/v1/users
+POST /api/v1/users
+GET /api/v1/users/:id
+```
+
+Controllers must explicitly specify their API version.
+
+Example:
+
+```ts
+@Controller({
+  path: 'users',
+  version: '1',
+})
+```
+
+---
+
+## API Request Flow
+
+The application follows this general request flow:
+
+```text
+Client / Postman
+       ↓
+Global API Prefix
+       ↓
+API Versioning
+       ↓
+Global ValidationPipe
+       ↓
+Controller
+       ↓
+Service
+       ↓
+ResponseInterceptor
+       ↓
+Standard Success Response
+```
+
+For failed requests:
+
+```text
+Client / Postman
+       ↓
+Application
+       ↓
+Exception
+       ↓
+HttpExceptionFilter
+       ↓
+Standard Error Response
+```
+
+---
+
+# Global Validation
+
+The application uses NestJS `ValidationPipe` globally.
+
+Current configuration:
+
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
+```
+
+## `whitelist`
+
+Only properties defined in the DTO are allowed.
+
+Unknown properties are not accepted.
+
+---
+
+## `forbidNonWhitelisted`
+
+Requests containing properties that are not defined in the DTO are rejected with a `400 Bad Request` response.
+
+This prevents clients from sending unexpected fields to the API.
+
+---
+
+## `transform`
+
+Enables transformation of incoming request values according to DTO definitions.
+
+This is useful when handling values received through HTTP requests, especially query parameters and route parameters.
+
+---
+
+## DTO Validation
+
+API request validation should be implemented through DTOs.
+
+Example:
+
+```ts
+export class CreateUserDto {
+  @IsString()
+  name: string;
+}
+```
+
+Controllers should use DTOs instead of manually validating request bodies.
+
+Example:
+
+```ts
+@Post()
+createUser(@Body() createUserDto: CreateUserDto) {
+  return this.usersService.create(createUserDto);
+}
+```
+
+---
+
+# API Response Standards
+
+The application uses a global response interceptor to maintain a consistent successful-response structure.
+
+## Successful Response
+
+All successful HTTP responses are wrapped in:
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+The actual endpoint response is placed inside the `data` property.
+
+Controllers should return the actual data and should not manually add the `success` or `data` properties.
+
+---
+
+## Health Endpoint Example
+
+The Health module provides a lightweight endpoint for verifying that the application is running.
+
+Location:
+
+```text
+src/modules/health/
+```
+
+Structure:
+
+```text
+health/
+├── health.controller.ts
+├── health.module.ts
+└── health.service.ts
+```
+
+Endpoint:
+
+```http
+GET /api/v1/health
+```
+
+The service returns:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+The global response interceptor transforms it into:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ok"
+  }
+}
+```
+
+---
+
+# API Error Standards
+
+Unhandled HTTP exceptions are handled by the global `HttpExceptionFilter`.
+
+The standard error response is:
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Error message",
+  "path": "/api/v1/example",
+  "timestamp": "2026-08-17T00:00:00.000Z"
+}
+```
+
+The actual timestamp will be generated when the error occurs.
+
+---
+
+## Internal Server Errors
+
+Unexpected application errors return a generic response:
+
+```json
+{
+  "success": false,
+  "statusCode": 500,
+  "message": "Internal server error",
+  "path": "/api/v1/example",
+  "timestamp": "2026-08-17T00:00:00.000Z"
+}
+```
+
+Internal implementation details must not be exposed to API clients.
+
+The following should not be returned to clients:
+
+- Stack traces
+- Database errors
+- Internal implementation details
+- Secrets
+- Environment variables
+- Sensitive information
+
+---
+
+# Global Exception Filter
+
+The global exception filter is located at:
+
+```text
+src/common/filters/http-exception.filter.ts
+```
+
+It is registered during application bootstrap:
+
+```ts
+app.useGlobalFilters(new HttpExceptionFilter());
+```
+
+The filter provides a consistent error response regardless of which controller or service generated the exception.
+
+---
+
+# Global Response Interceptor
+
+The global response interceptor is located at:
+
+```text
+src/common/interceptors/response.interceptor.ts
+```
+
+It is registered during application bootstrap:
+
+```ts
+app.useGlobalInterceptors(new ResponseInterceptor());
+```
+
+Its responsibility is to wrap successful responses using:
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+Controllers should therefore return only the actual response data.
+
+---
+
+# Health Module
+
+The Health module is a system-level module used to verify application availability.
+
+Location:
+
+```text
+src/modules/health/
+```
+
+Structure:
+
+```text
+health/
+├── health.controller.ts
+├── health.module.ts
+└── health.service.ts
+```
+
+Endpoint:
+
+```http
+GET /api/v1/health
+```
+
+Expected application data:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Final API response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ok"
+  }
+}
+```
+
+The Health module can later be extended to verify dependencies such as:
+
+- Database connectivity
+- External services
+- File storage
+- Other required infrastructure
+
+The Health module should remain isolated from business modules.
+
+---
+
+# Configuration Architecture
+
+Environment variables are loaded using NestJS `ConfigModule`.
+
+The configuration module is globally available to the application.
+
+Current configuration includes:
+
+```ts
+ConfigModule.forRoot({
+  isGlobal: true,
+  cache: true,
+  validationSchema: envValidationSchema,
+});
+```
 
 Configuration should be accessed through `ConfigService`.
 
-Expected configuration areas include:
+Example:
 
-- Application
-- Database
-- Authentication
-- Email
-- File storage
-- External services
+```ts
+const configService = app.get(ConfigService);
 
-Sensitive values must never be hardcoded.
+const port = configService.get<number>('PORT')!;
+```
 
-Detailed configuration rules are documented in:
-
-    docs/setup/environment.md
+Direct access to `process.env` should be avoided in application logic when the value is already managed through `ConfigService`.
 
 ---
 
-## 10. Database Architecture
+# Application Bootstrap
 
-MongoDB will be the primary database.
+The application bootstrap file is:
 
-The application will use Mongoose for database interaction.
+```text
+src/main.ts
+```
 
-Expected database responsibilities include:
+Its responsibilities include:
 
-- Schema definitions
-- Model definitions
-- Indexes
-- Queries
-- Aggregations
-- Data persistence
-- Data consistency
+- Creating the NestJS application
+- Loading application configuration
+- Configuring the global API prefix
+- Configuring API versioning
+- Registering global validation
+- Registering the global exception filter
+- Registering the global response interceptor
+- Starting the HTTP server
 
-Database-related code will be organized separately from HTTP controllers.
-
----
-
-## 11. Database Schema Principles
-
-Schemas should be designed according to actual business requirements.
-
-Where appropriate, schemas should include:
-
-- Unique identifiers
-- Required fields
-- Appropriate data types
-- Validation rules
-- Timestamps
-- Indexes
-- References
-- Status fields
-- Audit-related information
-
-Indexes should be introduced based on actual query patterns rather than adding indexes indiscriminately.
+The bootstrap layer should remain focused on application-wide configuration rather than business logic.
 
 ---
 
-## 12. API Architecture
+# Current API Foundation
 
-The application exposes REST APIs.
+The following foundation has been implemented:
 
-All APIs will use versioning.
-
-Initial API version:
-
+```text
+API Prefix
+    /api
+       ↓
+API Versioning
     /api/v1
+       ↓
+Global ValidationPipe
+       ↓
+Controller
+       ↓
+Service
+       ↓
+ResponseInterceptor
+       ↓
+Standard Success Response
+```
 
-Examples:
+Error handling follows:
 
-    /api/v1/auth/login
-    /api/v1/users
-    /api/v1/assets
-    /api/v1/assets/:id
-
-API versioning allows future versions to coexist without immediately breaking existing clients.
+```text
+Exception
+    ↓
+HttpExceptionFilter
+    ↓
+Standard Error Response
+```
 
 ---
 
-## 13. API Response Standard
+# Development Rules
 
-The API will use a consistent response structure.
+The following rules apply throughout the project.
 
-### Successful Response
+## Feature Branches
+
+Every significant feature or architectural change should be developed in a separate branch.
 
 Example:
 
-    {
-      "success": true,
-      "message": "Asset retrieved successfully",
-      "data": {}
-    }
-
-### Collection Response
-
-Example:
-
-    {
-      "success": true,
-      "message": "Assets retrieved successfully",
-      "data": [],
-      "meta": {
-        "page": 1,
-        "limit": 10,
-        "total": 100,
-        "totalPages": 10
-      }
-    }
-
-### Error Response
-
-Example:
-
-    {
-      "success": false,
-      "statusCode": 404,
-      "message": "Asset not found",
-      "error": "NOT_FOUND"
-    }
-
-The exact response contract will be finalized before implementing the first major business API.
-
----
-
-## 14. Request Validation
-
-All externally supplied input must be validated.
-
-Validation applies to:
-
-- Request bodies
-- Query parameters
-- Route parameters
-- File uploads
-- Business-specific input
-
-Invalid requests should be rejected before business logic is executed.
-
-The application will use NestJS validation mechanisms and appropriate validation libraries.
-
----
-
-## 15. Error Handling
-
-Errors will be handled consistently across the application.
-
-Expected categories include:
-
-- Validation errors
-- Authentication errors
-- Authorization errors
-- Resource not found
-- Duplicate resources
-- Business rule violations
-- Database errors
-- External service errors
-- Unexpected application errors
-
-Expected API errors should return safe, structured responses.
-
-Unexpected internal errors must not expose sensitive implementation details.
-
-Detailed technical information should be available through logs where appropriate.
-
----
-
-## 16. Authentication Architecture
-
-Authentication will be implemented as a dedicated module.
-
-The planned authentication flow is:
-
-    User
-      |
-      | Login
-      v
-    Authentication Service
-      |
-      +---- Access Token
-      |
-      +---- Refresh Token
-
-The authentication system is expected to support:
-
-- Registration
-- Login
-- Access tokens
-- Refresh tokens
-- Logout
-- Password hashing
-- Password validation
-- Authentication guards
-- Token validation
-
-The exact authentication design will be finalized before implementation.
-
----
-
-## 17. Authorization Architecture
-
-Authentication and authorization are separate concerns.
-
-Authentication answers:
-
-    Who is the user?
-
-Authorization answers:
-
-    What is the user allowed to do?
-
-The application may support:
-
-- Roles
-- Permissions
-- Resource-level authorization
-- Guards
-- Policies
-
-The final authorization model will be based on business requirements.
-
----
-
-## 18. File Upload Architecture
-
-File uploads will be implemented through a dedicated file and storage module.
-
-Expected flow:
-
-    Client
-      |
-      | multipart/form-data
-      v
-    NestJS API
-      |
-      +--> File Validation
-      |
-      +--> Size Validation
-      |
-      +--> Type Validation
-      |
-      +--> Security Checks
-      |
-      +--> Generate Storage Key
-      |
-      v
-    File Storage Provider
-      |
-      v
-    File Metadata
-      |
-      v
-    MongoDB
-
-The database should primarily store file metadata rather than large binary files when external object storage is appropriate.
-
-Expected metadata may include:
-
-- File ID
-- Original file name
-- Storage key
-- MIME type
-- File size
-- Uploaded by
-- Created date
-- Storage provider
-
-The actual storage provider will be selected based on project requirements.
-
----
-
-## 19. Email Architecture
-
-Email functionality will be isolated behind a dedicated email service.
-
-Expected flow:
-
-    Business Module
-          |
-          v
-    Email Service
-          |
-          v
-    Email Provider
-
-Business modules should not contain provider-specific email implementation.
-
-The email system should support:
-
-- HTML templates
-- Dynamic content
-- Template variables
-- Provider configuration
-- Error handling
-- Logging
-- Retry handling where appropriate
-
-This abstraction allows the email provider to be replaced without changing business logic.
-
----
-
-## 20. Notification Architecture
-
-Notifications will be implemented as a separate capability.
-
-Potential notification channels include:
-
-- In-app notifications
-- Email notifications
-
-The notification architecture should allow additional channels to be introduced without tightly coupling business modules to individual providers.
-
-Example:
-
-    Business Event
-          |
-          v
-    Notification Service
-          |
-          +---- In-App
-          |
-          +---- Email
-          |
-          +---- Future Channels
-
----
-
-## 21. Logging and Observability
-
-The application will use centralized logging.
-
-Logs should provide sufficient information to diagnose application issues.
-
-Important logging considerations include:
-
-- Request information
-- Error information
-- Important business events
-- External service failures
-- Database failures
-- Performance information where required
-
-Sensitive information must never be logged.
-
-The following must not appear in logs:
-
-- Passwords
-- Access tokens
-- Refresh tokens
-- JWT secrets
-- API keys
-- Database passwords
-- Email passwords
-- Private keys
-
----
-
-## 22. Security Architecture
-
-Security must be considered for every significant feature.
-
-The application will consider:
-
-- Authentication
-- Authorization
-- Input validation
-- Secure password hashing
-- Rate limiting
-- CORS
-- HTTP security headers
-- Request size limits
-- File upload restrictions
-- Secure file handling
-- Secret management
-- Sensitive data protection
-- Error information exposure
-- Dependency security
-
-Security requirements will be expanded as features are implemented.
-
----
-
-## 23. API Documentation
-
-Swagger / OpenAPI will be used for API documentation.
-
-Documentation should include:
-
-- Endpoints
-- HTTP methods
-- Parameters
-- Request bodies
-- Response schemas
-- Authentication requirements
-- Error responses
-
-The Swagger documentation will be available through the configured API documentation route.
-
-Expected route:
-
-    /api/docs
-
----
-
-## 24. Postman Integration
-
-Every API endpoint must be accessible and testable through Postman.
-
-The project will maintain a Postman collection organized by business capability.
-
-Expected organization:
-
-    Asset Management API
-    │
-    ├── Health
-    │
-    ├── Authentication
-    │   ├── Register
-    │   ├── Login
-    │   ├── Refresh Token
-    │   └── Logout
-    │
-    ├── Users
-    │
-    ├── Assets
-    │
-    ├── Asset Types
-    │
-    ├── Allocations
-    │
-    ├── Requests
-    │
-    ├── Files
-    │
-    └── Notifications
-
-Postman environments will use variables such as:
-
-    {{baseUrl}}
-    {{accessToken}}
-    {{refreshToken}}
-
-Postman verification complements automated testing and does not replace it.
-
----
-
-## 25. Testing Architecture
-
-The project will use multiple levels of testing.
-
-### Unit Tests
-
-Used to test individual services, utilities, and business logic.
-
-### Integration Tests
-
-Used to test interactions between application components and external dependencies where appropriate.
-
-### End-to-End Tests
-
-Used to test complete application workflows.
-
-### API Testing
-
-API endpoints will be verified through Postman and automated API tests where appropriate.
-
-The testing strategy will evolve as the application grows.
-
----
-
-## 26. Dependency Injection
-
-NestJS dependency injection will be used throughout the application.
-
-Services should depend on abstractions or other services rather than manually constructing dependencies.
-
-This improves:
-
-- Testability
-- Maintainability
-- Reusability
-- Dependency management
-
----
-
-## 27. Separation of Concerns
-
-Each component should have a clear responsibility.
-
-Example:
-
-    Controller
-        |
-        | Handles HTTP
-        v
-    Service
-        |
-        | Handles business logic
-        v
-    Data Access
-        |
-        | Handles persistence
-        v
-    Database
-
-A controller should not:
-
-- Execute complex database queries
-- Contain business workflows
-- Send emails directly
-- Manage file storage directly
-
-Instead, these responsibilities should belong to appropriate services and modules.
-
----
-
-## 28. Module Boundaries
-
-Business functionality should be isolated into modules.
-
-Example:
-
-    modules/
-    │
-    ├── auth/
-    ├── users/
-    ├── assets/
-    ├── asset-types/
-    ├── allocations/
-    ├── requests/
-    ├── files/
-    ├── notifications/
-    └── emails/
-
-A module should expose only the functionality required by other modules.
-
-Unnecessary cross-module dependencies should be avoided.
-
----
-
-## 29. External Service Abstraction
-
-External services should be isolated behind application services or abstractions.
-
-Examples:
-
-    Application
-        |
-        +---- EmailService
-        |       |
-        |       +---- Email Provider
-        |
-        +---- FileStorageService
-        |       |
-        |       +---- Storage Provider
-        |
-        +---- ExternalApiService
-                |
-                +---- Third-party API
-
-This prevents business logic from becoming tightly coupled to a specific provider.
-
----
-
-## 30. Transaction and Data Consistency Strategy
-
-Operations involving multiple related database changes must be evaluated for consistency requirements.
-
-Where appropriate, MongoDB transactions may be used.
-
-Transactions should be introduced only when the business operation requires atomicity.
-
-Potential examples include:
-
-- Asset allocation
-- Asset transfer
-- Asset return
-- Multi-document status updates
-
-The exact transaction requirements will be determined when the corresponding business workflows are designed.
-
----
-
-## 31. Performance Considerations
-
-Performance should be considered during feature implementation.
-
-Important areas include:
-
-- Database indexes
-- Query optimization
-- Pagination
-- Projection of unnecessary fields
-- Large file handling
-- External API calls
-- Caching where appropriate
-- Background processing for long-running operations
-- Efficient response payloads
-
-Performance optimizations should be based on actual requirements and measurements rather than premature optimization.
-
----
-
-## 32. Scalability Considerations
-
-The application should be designed so that additional functionality can be introduced without major architectural changes.
-
-Potential future capabilities include:
-
-- Background jobs
-- Queues
-- Caching
-- Distributed storage
-- Multiple application instances
-- Horizontal scaling
-- External monitoring
-- Centralized logging
-
-These capabilities should be introduced when justified by application requirements.
-
----
-
-## 33. Deployment Architecture
-
-The exact deployment architecture will be finalized later.
-
-The expected production architecture will contain:
-
-    Client
-      |
-      v
-    Load Balancer / Gateway
-      |
-      v
-    NestJS Application
-      |
-      +-------------------+
-      |                   |
-      v                   v
-    MongoDB          External Services
-                          |
-                          +-- Email
-                          +-- File Storage
-                          +-- Other APIs
-
-The application should remain stateless where possible so that multiple application instances can be deployed.
-
----
-
-## 34. Environment Management
-
-Configuration must be externalized from the application.
-
-Expected environments:
-
-- Development
-- Testing
-- Staging
-- Production
-
-Environment-specific values must be provided through environment variables or secure secret-management systems.
-
-Detailed configuration standards are documented in:
-
-    docs/setup/environment.md
-
----
-
-## 35. Git and Development Architecture
-
-The project follows a feature-branch workflow.
-
-Significant changes should be implemented in dedicated branches.
-
-Example:
-
+```text
+main
+  ↓
+feat/user-management
+```
+
+After implementation, testing, and documentation:
+
+```text
+feature branch
+      ↓
+     PR
+      ↓
     main
-     |
-     +-- feature/authentication
-     |
-     +-- feature/file-upload
-     |
-     +-- feature/email-service
-     |
-     +-- feature/asset-management
-     |
-     +-- chore/project-foundation
+```
 
-Each significant change should include:
-
-- Implementation
-- Tests
-- Postman verification where applicable
-- Documentation
-- Appropriate commits
-
-Changes are merged into `main` through Pull Requests.
-
-Detailed workflow is documented in:
-
-    docs/project/development-workflow.md
+New branches should be created from the latest `main`.
 
 ---
 
-## 36. Documentation Strategy
+## Commits
 
-Documentation is treated as part of the application.
+Each significant logical step should have its own commit.
 
-The repository documentation should contain enough information to understand and maintain the application without relying on the original development conversation.
+Commit messages should follow a consistent conventional format.
 
-Documentation categories include:
+Examples:
 
-    docs/
-    │
-    ├── project/
-    │   ├── architecture.md
-    │   └── development-workflow.md
-    │
-    ├── setup/
-    │   └── environment.md
-    │
-    ├── features/
-    │   ├── authentication.md
-    │   ├── file-upload.md
-    │   ├── email-service.md
-    │   └── ...
-    │
-    └── decisions/
-        ├── 001-use-bun.md
-        ├── 002-use-mongodb.md
-        └── ...
-
-Feature documentation should be updated alongside significant functionality.
+```text
+feat: add user management
+fix: handle invalid user input
+chore: update environment validation
+docs: update architecture documentation
+refactor: simplify authentication service
+test: add user service tests
+```
 
 ---
 
-## 37. Architecture Decision Records
+# API Testing
 
-Major technical decisions should be documented using Architecture Decision Records.
+Every API endpoint should be accessible and testable through Postman.
 
-ADRs will be stored under:
+For each significant endpoint, testing should cover:
 
-    docs/decisions/
+- Successful request
+- Invalid request
+- Missing required fields
+- Invalid data types
+- Unauthorized access where applicable
+- Forbidden access where applicable
+- Not found scenarios where applicable
+- Server error scenarios where applicable
 
-Each ADR should contain:
-
-- Decision title
-- Status
-- Context
-- Decision
-- Alternatives considered
-- Consequences
-
-Example:
-
-    docs/decisions/001-use-bun.md
-
-This provides a historical record of important architectural decisions.
+API behavior should be verified before the feature is considered complete.
 
 ---
 
-## 38. Current Architecture Status
+# Production Development Principles
 
-### Completed
+The project should be developed with production-level practices from the beginning.
 
-- NestJS application initialized
-- TypeScript configured
-- Bun configured as package manager
-- GitHub Codespace development environment
-- Git branch workflow established
-- Environment configuration introduced
-- Initial project documentation created
+Important principles include:
 
-### In Progress
-
-- Project foundation
-- Environment validation
-- API standards
-- Global validation
-- Error handling
-- Logging
-- Swagger
-- Security configuration
-- Postman setup
-
-### Planned
-
-- MongoDB integration
-- Authentication
-- Authorization
-- User management
-- Asset management
-- Asset allocation
-- Asset requests
-- File uploads
-- Email service
-- Notifications
-- Reporting
-- Production deployment
+- Strong request validation
+- Consistent API responses
+- Centralized exception handling
+- Environment-based configuration
+- Feature-based modules
+- Separation of controllers and business logic
+- Secure handling of files
+- Secure email integration
+- Authentication and authorization
+- Proper logging
+- Automated testing
+- API documentation
+- Database validation and error handling
+- No sensitive information in API responses
+- No secrets committed to Git
 
 ---
 
-## 39. Architectural Principles
+# Future Modules
 
-The project will follow these principles:
+The following modules are expected to be added as the application grows:
 
-1. Separation of concerns
-2. Modular architecture
-3. Dependency injection
-4. Strong typing
-5. Secure configuration
-6. Centralized validation
-7. Consistent API behavior
-8. Centralized error handling
-9. Testability
-10. Maintainability
-11. Scalability
-12. Observability
-13. Minimal coupling
-14. Clear module boundaries
-15. Production-oriented development
+```text
+modules/
+├── health/
+├── auth/
+├── users/
+├── files/
+├── email/
+└── ...
+```
+
+Additional modules should be introduced based on actual application requirements rather than creating empty modules prematurely.
 
 ---
 
-## 40. Living Document
+# Architecture Evolution
 
-This document is a living architectural reference.
+This document should be updated whenever a significant architectural decision is introduced.
 
-It must be updated when significant architectural decisions or structural changes are introduced.
+The purpose of this document is to provide a historical reference for:
 
-Examples of changes that require documentation updates include:
+- Why a particular architecture was chosen
+- Where functionality belongs
+- How requests flow through the application
+- How APIs should behave
+- How future developers should extend the application
 
-- New major modules
-- Database architecture changes
-- Authentication changes
-- Authorization model changes
-- File storage provider changes
-- Email provider changes
-- New infrastructure
-- API versioning changes
-- Major deployment changes
-- Significant architectural decisions
+All significant architectural changes should be documented and committed together with the related implementation.
 
-Major architectural decisions should also be recorded as Architecture Decision Records under:
+# API Documentation
 
-    docs/decisions/
+## Swagger / OpenAPI
+
+The application uses NestJS Swagger to provide OpenAPI documentation for the API.
+
+Swagger is configured during application bootstrap in:
+
+```text
+src/main.ts
+```
+
+The Swagger package is:
+
+```text
+@nestjs/swagger
+```
+
+---
+
+## Swagger Configuration
+
+The current Swagger configuration includes:
+
+- Application title
+- API description
+- API version
+- Bearer authentication support
+- Automatically generated API documentation
+
+Configuration:
+
+```ts
+const swaggerConfig = new DocumentBuilder()
+  .setTitle('Application API')
+  .setDescription('API documentation')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .build();
+
+const swaggerDocument = SwaggerModule.createDocument(
+  app,
+  swaggerConfig,
+);
+
+SwaggerModule.setup(
+  'api/docs',
+  app,
+  swaggerDocument,
+);
+```
+
+---
+
+## Swagger URL
+
+Swagger UI is available at:
+
+```text
+/api/docs
+```
+
+For a local application:
+
+```text
+http://localhost:3000/api/docs
+```
+
+The actual URL depends on the environment and port configuration.
+
+---
+
+## API Discovery
+
+Swagger automatically discovers controllers and routes registered within the NestJS application.
+
+For example, the Health module is automatically displayed:
+
+```text
+GET /api/v1/health
+```
+
+No unnecessary Swagger decorators are required when automatic route discovery provides the required documentation.
+
+Swagger decorators such as:
+
+```ts
+@ApiTags()
+@ApiOperation()
+@ApiResponse()
+```
+
+should be introduced when additional API documentation or metadata is actually required.
+
+---
+
+## Swagger Testing
+
+Swagger UI can be used to test API endpoints directly.
+
+For example:
+
+```text
+GET /api/v1/health
+```
+
+Using the **Try it out** and **Execute** options should return:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ok"
+  }
+}
+```
+
+This verifies the complete request flow:
+
+```text
+Swagger UI
+    ↓
+HTTP Request
+    ↓
+/api/v1/health
+    ↓
+Health Controller
+    ↓
+Health Service
+    ↓
+Response Interceptor
+    ↓
+Standard API Response
+```
+
+---
+
+## Authentication
+
+Bearer authentication support has been configured in Swagger:
+
+```ts
+.addBearerAuth()
+```
+
+This prepares Swagger for authenticated endpoints that will be introduced later.
+
+Authentication requirements should be added to individual endpoints when authentication is implemented.
+
+---
+
+## API Documentation Principles
+
+Swagger documentation should be maintained as the API evolves.
+
+For significant endpoints, documentation should eventually describe:
+
+- Endpoint purpose
+- HTTP method
+- Request parameters
+- Request body
+- DTO structure
+- Authentication requirements
+- Successful responses
+- Validation errors
+- Authorization errors
+- Not-found scenarios
+
+Documentation should provide useful information to developers consuming the API without exposing internal implementation details or sensitive information.
