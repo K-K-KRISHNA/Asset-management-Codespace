@@ -2,6 +2,7 @@ import { Injectable, LoggerService as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as winston from 'winston';
 import { currentTraceId } from './trace-context';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 type LogMeta = Record<string, unknown>;
 
@@ -19,6 +20,8 @@ export class AppLoggerService implements NestLogger {
     const environment =
       this.configService.get<string>('ENVIRONMENT') ?? 'dev';
 
+    const transports = this.createTransports();
+
     this.logger = winston.createLogger({
       level: logLevel,
       defaultMeta: {
@@ -29,20 +32,18 @@ export class AppLoggerService implements NestLogger {
         winston.format.timestamp(),
         winston.format.json(),
       ),
-      transports: [
-        new winston.transports.Console(),
-      ],
+      transports
     });
   }
 
   log(
-  message: unknown,
-  context?: string,
-  meta?: LogMeta,
-): void {
-  this.logger.info(
-    this.createLogEntry(message, context, undefined, meta),
-  );
+    message: unknown,
+    context?: string,
+    meta?: LogMeta,
+  ): void {
+    this.logger.info(
+      this.createLogEntry(message, context, undefined, meta),
+    );
   }
 
   error(
@@ -99,5 +100,32 @@ export class AppLoggerService implements NestLogger {
       context,
       ...(stack && { stack }),
     };
+  }
+
+  private createTransports(): winston.transport[] {
+    const configuredTransports = this.configService.get<string>('LOG_TRANSPORTS') ?? 'console';
+
+    const transports: winston.transport[] = []
+
+    const enabledTransports = configuredTransports.split(',').map((transport) => transport.trim().toLocaleLowerCase()).filter(Boolean);
+
+    if (enabledTransports.includes('console')) {
+      transports.push(new winston.transports.Console());
+    }
+
+    if (enabledTransports.includes('file')) {
+      transports.push(
+        new DailyRotateFile({
+          filename: this.configService.get<string>('LOG_FILE_PATH') ?? './logs/my-api-%DATE%.log',
+          datePattern:
+            this.configService.get<string>(
+              'LOG_FILE_ROTATE_FREQUENCY',
+            ) ?? 'YYYY-MM-DD',
+          maxSize: this.configService.get<string>('LOG_FILE_MAX_SIZE') ?? '20m',
+          maxFiles: this.configService.get<string>('LOG_FILE_MAX_TIME') ?? '14d'
+        })
+      )
+    }
+    return transports
   }
 }
