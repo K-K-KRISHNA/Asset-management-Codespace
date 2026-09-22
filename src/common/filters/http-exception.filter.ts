@@ -42,7 +42,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       {
         statusCode: status,
         method: request.method,
-        url: request.url,
+        url: request.originalUrl ?? request.url,
+        ip: request.ip,
+        userAgent: request.get('user-agent'),
         error:
           exception instanceof Error
             ? exception.message
