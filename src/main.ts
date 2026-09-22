@@ -28,19 +28,18 @@ async function bootstrap() {
       transform: true
     })
   )
-  app.useGlobalFilters(new HttpExceptionFilter())
-  app.useGlobalInterceptors(new ResponseInterceptor())
-
+  app.useGlobalFilters(app.get(HttpExceptionFilter));
+app.useGlobalInterceptors(app.get(ResponseInterceptor));
   const swaggerConfig = new DocumentBuilder()
-  .setTitle('Application API')
-  .setDescription('API documentation')
-  .setVersion('1.0')
-  .addBearerAuth()
-  .build();
+    .setTitle('Application API')
+    .setDescription('API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
 
-const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
-SwaggerModule.setup('api/docs', app, swaggerDocument);
+  SwaggerModule.setup('api/docs', app, swaggerDocument);
 
   await app.listen(port ?? 3000);
 }
