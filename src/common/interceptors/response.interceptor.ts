@@ -34,6 +34,8 @@ export class ResponseInterceptor<T>
             url: request.originalUrl ?? request.url,
             statusCode: response.statusCode,
             durationMs: Date.now() - startedAt,
+            ip: request.ip,
+            userAgent: request.get('user-agent'),
           },
         );
       }),
