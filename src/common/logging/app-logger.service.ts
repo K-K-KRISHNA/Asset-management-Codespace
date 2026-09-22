@@ -4,13 +4,14 @@ import * as winston from 'winston';
 import { currentTraceId } from './trace-context';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { maskPii } from './pii-masker';
+import { ElasticsearchTransport } from 'winston-elasticsearch';
 
 type LogMeta = Record<string, unknown>;
 
 @Injectable()
 export class AppLoggerService implements NestLogger {
   private readonly logger: winston.Logger;
-  private readonly piiMaskEnabled:boolean;
+  private readonly piiMaskEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const logLevel =
@@ -98,7 +99,7 @@ export class AppLoggerService implements NestLogger {
     stack?: string,
     meta?: LogMeta,
   ): LogMeta {
-    const logEntry:LogMeta = {
+    const logEntry: LogMeta = {
       ...meta,
       message,
       traceId: currentTraceId(),
@@ -131,6 +132,23 @@ export class AppLoggerService implements NestLogger {
           maxFiles: this.configService.get<string>('LOG_FILE_MAX_TIME') ?? '14d'
         })
       )
+    }
+    if (enabledTransports.includes('elk')) {
+      transports.push(
+        new ElasticsearchTransport({
+          level: this.configService.get<string>('LOG_LEVEL') ?? 'info',
+          indexPrefix:
+            this.configService.get<string>(
+              'ELASTICSEARCH_INDEX_PREFIX',
+            ) ?? 'app-logs',
+          clientOpts: {
+            node:
+              this.configService.get<string>(
+                'ELASTICSEARCH_NODE_URL',
+              ) ?? 'http://localhost:9200',
+          },
+        }),
+      );
     }
     return transports
   }
