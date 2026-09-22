@@ -3,12 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import * as winston from 'winston';
 import { currentTraceId } from './trace-context';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { maskPii } from './pii-masker';
 
 type LogMeta = Record<string, unknown>;
 
 @Injectable()
 export class AppLoggerService implements NestLogger {
   private readonly logger: winston.Logger;
+  private readonly piiMaskEnabled:boolean;
 
   constructor(private readonly configService: ConfigService) {
     const logLevel =
@@ -19,6 +21,9 @@ export class AppLoggerService implements NestLogger {
 
     const environment =
       this.configService.get<string>('ENVIRONMENT') ?? 'dev';
+
+    this.piiMaskEnabled =
+      this.configService.get<boolean>('PII_MASKING_ENABLED') ?? true;
 
     const transports = this.createTransports();
 
@@ -93,13 +98,14 @@ export class AppLoggerService implements NestLogger {
     stack?: string,
     meta?: LogMeta,
   ): LogMeta {
-    return {
+    const logEntry:LogMeta = {
       ...meta,
       message,
       traceId: currentTraceId(),
       context,
       ...(stack && { stack }),
     };
+    return maskPii(logEntry, this.piiMaskEnabled) as LogMeta
   }
 
   private createTransports(): winston.transport[] {
